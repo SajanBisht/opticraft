@@ -1,12 +1,14 @@
 import { parse } from "@babel/parser";
 import traverse from "@babel/traverse";
 import * as t from "@babel/types";
+import { estimateAdvancedComplexity } from "../compiler/analyzer/advancedComplexity";
 
 export interface FunctionInfo {
     name: string;
     params: string[];
     startLine: number;
     complexity: number;
+    timeComplexity: string; 
 }
 
 export function analyzeCode(code: string): FunctionInfo[] {
@@ -65,8 +67,8 @@ export function analyzeCode(code: string): FunctionInfo[] {
             const params = path.node.params.map(getParamName);
             const startLine = path.node.loc?.start.line || 0;
             const complexity = calculateComplexity(path);
-
-            functions.push({ name, params, startLine, complexity });
+            const timeComplexity = estimateAdvancedComplexity(path);
+            functions.push({ name, params, startLine, complexity, timeComplexity });
         },
 
         // =========================
@@ -82,8 +84,8 @@ export function analyzeCode(code: string): FunctionInfo[] {
             const params = path.node.params.map(getParamName);
             const startLine = path.node.loc?.start.line || 0;
             const complexity = calculateComplexity(path);
-
-            functions.push({ name, params, startLine, complexity });
+            const timeComplexity = estimateAdvancedComplexity(path);
+            functions.push({ name, params, startLine, complexity, timeComplexity });
         },
 
         // =========================
@@ -100,7 +102,8 @@ export function analyzeCode(code: string): FunctionInfo[] {
             const startLine = path.node.loc?.start.line || 0;
             const complexity = calculateComplexity(path);
 
-            functions.push({ name, params, startLine, complexity });
+            const timeComplexity = estimateAdvancedComplexity(path);
+            functions.push({ name, params, startLine, complexity, timeComplexity });
         },
 
         // =========================
@@ -112,7 +115,8 @@ export function analyzeCode(code: string): FunctionInfo[] {
             const startLine = path.node.loc?.start.line || 0;
             const complexity = calculateComplexity(path);
 
-            functions.push({ name, params, startLine, complexity });
+            const timeComplexity = estimateAdvancedComplexity(path);
+            functions.push({ name, params, startLine, complexity, timeComplexity });
         },
 
         // =========================
@@ -125,7 +129,8 @@ export function analyzeCode(code: string): FunctionInfo[] {
                 const startLine = path.node.loc?.start.line || 0;
                 const complexity = calculateComplexity(path);
 
-                functions.push({ name, params, startLine, complexity });
+                const timeComplexity = estimateAdvancedComplexity(path);
+                functions.push({ name, params, startLine, complexity, timeComplexity });
             }
         },
 
@@ -138,7 +143,8 @@ export function analyzeCode(code: string): FunctionInfo[] {
             const startLine = path.node.loc?.start.line || 0;
             const complexity = calculateComplexity(path);
 
-            functions.push({ name, params, startLine, complexity });
+            const timeComplexity = estimateAdvancedComplexity(path);
+            functions.push({ name, params, startLine, complexity, timeComplexity });
         },
 
         // =========================
@@ -151,7 +157,8 @@ export function analyzeCode(code: string): FunctionInfo[] {
                 const startLine = path.node.loc?.start.line || 0;
                 const complexity = calculateComplexity(path);
 
-                functions.push({ name, params, startLine, complexity });
+                const timeComplexity = estimateAdvancedComplexity(path);
+                functions.push({ name, params, startLine, complexity, timeComplexity });
             }
         }
 

@@ -1,97 +1,141 @@
 import * as vscode from 'vscode';
 import { runMiniCompiler } from './compiler';
 import { analyzeCode as babelAnalyze } from './babelFallback/babelAnalyzer';
+import { generateAIComment } from "./ai/aiService";
+
+interface FunctionMeta {
+    name: string;
+    params: number;
+    complexity: number;
+    time: string;
+}
+
+async function createComment(meta: FunctionMeta, sourceTag: string): Promise<string> {
+    const baseComment =
+        `${sourceTag} ${meta.name}() | Params: ${meta.params} | Complexity: ${meta.complexity} | Time: ${meta.time}`;
+
+    if (meta.complexity >= 4 || meta.time.includes("n")) {
+        try {
+            const aiText = await generateAIComment(meta);
+            return `// ${baseComment}\n// [AI] ${aiText}`;
+        } catch {
+            return `// ${baseComment}`;
+        }
+    }
+
+    return `// ${baseComment}`;
+}
 
 export function activate(context: vscode.ExtensionContext) {
 
-	const disposable = vscode.commands.registerCommand(
-		'opticraft.optimizeComments',
-		async () => {
+    const disposable = vscode.commands.registerCommand(
+        'opticraft.optimizeComments',
+        async () => {
 
-			const editor = vscode.window.activeTextEditor;
+            const editor = vscode.window.activeTextEditor;
 
-			if (!editor) {
-				vscode.window.showErrorMessage("Open a code file before running OptiCraft.");
-				return;
-			}
+            if (!editor) {
+                vscode.window.showErrorMessage("Open a code file before running OptiCraft.");
+                return;
+            }
 
-			const code = editor.document.getText();
+            const code = editor.document.getText();
 
-			//  Run BOTH analyzers
-			const miniResult = runMiniCompiler(code);
-			const babelResult = babelAnalyze(code);
+            const miniResult = runMiniCompiler(code);
+            const babelResult = babelAnalyze(code);
 
-			const functionsMap = new Map<string, any>();
+            const functionsMap = new Map<string, any>();
 
-			//  Add Mini Compiler results
-			if (miniResult.success) {
-				console.log(" Using Mini Compiler (partial)");
+            if (miniResult.success) {
+                miniResult.functions.forEach(fn => {
+                    const key = fn.name + fn.startLine;
 
-				miniResult.functions.forEach(fn => {
-					const key = fn.name + fn.startLine;
-					functionsMap.set(key, { ...fn, source: "MC" });
-				});
-			}
+                    functionsMap.set(key, {
+                        ...fn,
+                        source: "MC",
+                        timeComplexity: "Unknown"
+                    });
+                });
+            }
 
-			// Add Babel results (avoid duplicates)
-			babelResult.forEach(fn => {
-				const key = fn.name + fn.startLine;
+            babelResult.forEach(fn => {
+                const key = fn.name + fn.startLine;
 
-				if (!functionsMap.has(key)) {
-					functionsMap.set(key, { ...fn, source: "BABEL" });
-				}
-			});
+                if (functionsMap.has(key)) {
+                    const existing = functionsMap.get(key);
 
-			const functions = Array.from(functionsMap.values());
+                    functionsMap.set(key, {
+                        ...existing,
+                        timeComplexity: fn.timeComplexity || "O(1)"
+                    });
 
-			console.log(" Final Merged Analysis:", functions);
+                } else {
+                    functionsMap.set(key, {
+                        ...fn,
+                        source: "BABEL",
+                        timeComplexity: fn.timeComplexity || "O(1)"
+                    });
+                }
+            });
 
-			//  Sort bottom → top
-			functions.sort((a, b) => b.startLine - a.startLine);
+            const functions = Array.from(functionsMap.values());
 
-			await editor.edit(editBuilder => {
+            functions.sort((a, b) => b.startLine - a.startLine);
 
-				functions.forEach(fn => {
+            const edits: { position: vscode.Position; text: string }[] = [];
 
-					if (!fn.startLine || fn.startLine <= 0) return;
+            for (const fn of functions) {
 
-					const lineIndex = fn.startLine - 1;
-					const prevLineIndex = lineIndex - 1;
+                if (!fn.startLine || fn.startLine <= 0) continue;
 
-					// duplicate detection (by function name)
-					if (prevLineIndex >= 0) {
-						const prevLineText = editor.document.lineAt(prevLineIndex).text;
+                const lineIndex = fn.startLine - 1;
+                const prevLineIndex = lineIndex - 1;
 
-						if (
-							prevLineText.includes(fn.name) &&
-							prevLineText.trim().startsWith("//")
-						) {
-							return;
-						}
-					}
+                if (prevLineIndex >= 0) {
+                    const prevLineText = editor.document.lineAt(prevLineIndex).text;
 
-					//  Complexity label
-					let complexityLabel = "Low";
-					if (fn.complexity > 5) complexityLabel = "Medium";
-					if (fn.complexity > 10) complexityLabel = "High";
+                    if (
+                        prevLineText.includes(fn.name) &&
+                        prevLineText.trim().startsWith("//")
+                    ) {
+                        continue;
+                    }
+                }
 
-					const sourceTag = fn.source === "MC" ? "[MC]" : "[BABEL]";
+                let complexityLabel = "Low";
+                if (fn.complexity > 5) complexityLabel = "Medium";
+                if (fn.complexity > 10) complexityLabel = "High";
 
-					const comment =
-						`// ${sourceTag} ${fn.name}() | Params: ${fn.params.length} | Complexity: ${fn.complexity} (${complexityLabel})`;
+                const sourceTag = fn.source === "MC" ? "[MC]" : "[BABEL]";
+                const time = fn.timeComplexity || "O(1)";
 
-					const position = new vscode.Position(lineIndex, 0);
+                const comment = await createComment(
+                    {
+                        name: fn.name,
+                        params: fn.params?.length || 0,
+                        complexity: fn.complexity,
+                        time: `${time} (${complexityLabel})`
+                    },
+                    sourceTag
+                );
 
-					editBuilder.insert(position, comment + "\n");
-				});
-			});
+                edits.push({
+                    position: new vscode.Position(lineIndex, 0),
+                    text: comment + "\n"
+                });
+            }
 
-			vscode.window.showInformationMessage("OptiCraft: Comments optimized ");
+            await editor.edit(editBuilder => {
+                edits.forEach(edit => {
+                    editBuilder.insert(edit.position, edit.text);
+                });
+            });
 
-		}
-	);
+            vscode.window.showInformationMessage("OptiCraft: Comments optimized");
+        }
+    );
 
-	context.subscriptions.push(disposable);
+    context.subscriptions.push(disposable);
 }
 
-export function deactivate() { }
+export function deactivate() {}

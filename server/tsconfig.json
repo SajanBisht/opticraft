@@ -9,6 +9,5 @@
     "types": ["node"],
     "sourceMap": true
   },
-  "include": ["src"],
-  "exclude": ["../src", "node_modules"]   //  VERY IMPORTANT
+  "include": ["src"]
 }

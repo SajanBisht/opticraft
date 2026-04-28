@@ -14,8 +14,8 @@ export function parse(tokens: Token[]): FunctionNode[] {
             const nameToken = tokens[i + 1];
             const openParen = tokens[i + 2];
 
-            if (!nameToken || nameToken.type !== "IDENTIFIER") continue;
-            if (!openParen || openParen.value !== "(") continue;
+            if (!nameToken || nameToken.type !== "IDENTIFIER") {continue;}
+            if (!openParen || openParen.value !== "(") {continue;}
 
             const name = nameToken.value;
             const params: string[] = [];

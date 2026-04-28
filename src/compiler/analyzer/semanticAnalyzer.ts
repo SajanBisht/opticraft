@@ -15,7 +15,7 @@ export function analyzeComplexity(
             t => t.line === fn.startLine && t.type === "FUNCTION"
         );
 
-        if (startIndex === -1) return fn;
+        if (startIndex === -1) {return fn;}
 
         // Find function body using { }
         let braceCount = 0;
@@ -26,7 +26,7 @@ export function analyzeComplexity(
             i++;
         }
 
-        if (i === tokens.length) return fn;
+        if (i === tokens.length) {return fn;}
 
         braceCount++; // first {
 
@@ -37,8 +37,8 @@ export function analyzeComplexity(
 
             const token = tokens[i];
 
-            if (token.value === "{") braceCount++;
-            if (token.value === "}") braceCount--;
+            if (token.value === "{") {braceCount++;}
+            if (token.value === "}") {braceCount--;}
 
             // Count decision points ONLY inside function
             if (

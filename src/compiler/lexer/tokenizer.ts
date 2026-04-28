@@ -24,16 +24,16 @@ export function tokenize(code: string): Token[] {
 
         let type = "UNKNOWN";
 
-        if (value === "function") type = "FUNCTION";
-        else if (value === "return") type = "RETURN";
-        else if (value === "if") type = "IF";
-        else if (value === "for") type = "FOR";
-        else if (value === "while") type = "WHILE";
-        else if (value === "=>") type = "ARROW";
-        else if (/^".*"$|^'.*'$/.test(value)) type = "STRING";
-        else if (/^\d+$/.test(value)) type = "NUMBER";
-        else if (/^[a-zA-Z_]\w*$/.test(value)) type = "IDENTIFIER";
-        else type = "SYMBOL";
+        if (value === "function") {type = "FUNCTION";}
+        else if (value === "return") {type = "RETURN";}
+        else if (value === "if") {type = "IF";}
+        else if (value === "for") {type = "FOR";}
+        else if (value === "while") {type = "WHILE";}
+        else if (value === "=>") {type = "ARROW";}
+        else if (/^".*"$|^'.*'$/.test(value)) {type = "STRING";}
+        else if (/^\d+$/.test(value)) {type = "NUMBER";}
+        else if (/^[a-zA-Z_]\w*$/.test(value)) {type = "IDENTIFIER";}
+        else {type = "SYMBOL";}
 
         tokens.push({
             type,

@@ -62,3 +62,7 @@ validateCode() — Babel parses + traverses
        ↓
 Valid functions → AI comments inserted
 Invalid functions → underlined, skipped
+
+
+# to wake server 
+https://opticraft-server.onrender.com

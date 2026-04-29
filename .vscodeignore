@@ -12,3 +12,6 @@ vsc-extension-quickstart.md
 docs/**
 .env
 .env.*
+server/**
+ast-output.json
+testAI.js
